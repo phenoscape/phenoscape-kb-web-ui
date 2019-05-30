@@ -69,6 +69,7 @@ div.classification-level div.classification-level {padding-left: 1.5em;}
 .facet-accessory .form-inline {border-bottom: 1px solid #ddd; margin-bottom: 5px;}
 .facet-accessory label {margin-bottom: 0;}
 .form-inline .checkbox {margin-left: 5px; margin-right: 5px;}
+.form-inline .radio {margin-left: 5px; margin-right: 5px;}
 
 tbody.striped > tr:nth-of-type(2n-3) { background-color: #f9f9f9;}
 tbody.sibling-striped > tr:nth-of-type(4n-3) { background-color: #f9f9f9;}

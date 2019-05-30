@@ -1,11 +1,11 @@
 package org.phenoscape.kb.ui
 
 import org.phenoscape.kb.ui.App.KBRouter.FacetURLP
+import org.phenoscape.kb.ui.FacetPage.PhenotypicQuality
 import org.phenoscape.kb.ui.Model.IRI
 import org.phenoscape.kb.ui.Model.Term
 import org.phenoscape.kb.ui.Views.taxonName
 import org.phenoscape.kb.ui.Vocab._
-
 import outwatch.dom.VDomModifier.StringNode
 import outwatch.dom.VNode
 import outwatch.redux.Component
@@ -61,10 +61,10 @@ object TaxonPage extends Component {
         dt("Children:"),
         dd((if (children.nonEmpty) children else List(i("None"))): _*))
     }
-    val taxaLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxaTab, Nil, Nil, List(t), None, false, false, false)))
-    val taxonAnnotationsLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxonAnnotationsTab, Nil, Nil, List(t), None, false, false, false)))
-    val phenotypesLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.PhenotypesTab, Nil, Nil, List(t), None, false, false, false)))
-    val pubsLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.PublicationsTab, Nil, Nil, List(t), None, false, false, false)))
+    val taxaLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxaTab, Nil, Nil, List(t), None, PhenotypicQuality, false, false, false)))
+    val taxonAnnotationsLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxonAnnotationsTab, Nil, Nil, List(t), None, PhenotypicQuality, false, false, false)))
+    val phenotypesLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.PhenotypesTab, Nil, Nil, List(t), None, PhenotypicQuality, false, false, false)))
+    val pubsLink = taxonIRIObs.map(t => FacetURLP.urlForState(FacetPage.State(FacetPage.PublicationsTab, Nil, Nil, List(t), None, PhenotypicQuality, false, false, false)))
     val obsSimilarityComponent = taxonIRIObs.map(iri => TaxonGeneSimilarityComponent(TaxonGeneSimilarityComponent.State(iri, None)))
 
     div(

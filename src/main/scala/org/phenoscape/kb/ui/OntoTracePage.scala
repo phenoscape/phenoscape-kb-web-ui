@@ -148,7 +148,7 @@ object OntoTracePage extends Component {
                 h4("Taxon is:"),
                 div(
                   cls := "form-group",
-                  Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.VTO)), 20), simpleTaxonTermObs, (term: Term) => term.label, store.sink.redirectMap((ot: Option[Term]) => SetTaxonIRI(ot.map(_.iri))), Some("any taxonomic group"))
+                  Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.VTO)), 20), simpleTaxonTermObs, (term: Term) => term.label, store.sink.redirectMap((ot: Option[Term]) => SetTaxonIRI(ot.map(_.iri))), Some("any taxonomic group"), Observable.of(false))
                 //span(cls := "glyphicon glyphicon-ok form-control-feedback")
                 )),
               h5(i("and")),
@@ -156,7 +156,7 @@ object OntoTracePage extends Component {
                 h4("Entity is:"),
                 div(
                   cls := "form-group",
-                  Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.Uberon)), 20), simpleEntityTermObs, (term: Term) => term.label, store.sink.redirectMap((ot: Option[Term]) => SetEntityIRI(ot.map(_.iri))), Some("any anatomical entity"))
+                  Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.Uberon)), 20), simpleEntityTermObs, (term: Term) => term.label, store.sink.redirectMap((ot: Option[Term]) => SetEntityIRI(ot.map(_.iri))), Some("any anatomical entity"), Observable.of(false))
                 //span(cls := "glyphicon glyphicon-ok form-control-feedback")
                 )),
               div(

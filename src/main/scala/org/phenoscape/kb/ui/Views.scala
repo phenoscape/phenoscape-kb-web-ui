@@ -106,7 +106,7 @@ object Views {
 
   val loading: VNode = img(src := "img/ajax-loader.gif") //FIXME verify path
 
-  def autocompleteField[T](search: String => Observable[List[T]], selection: Observable[Option[T]], show: T => String, makeSelection: Sink[Option[T]], placeholderText: Option[String]): VNode = {
+  def autocompleteField[T](search: String => Observable[List[T]], selection: Observable[Option[T]], show: T => String, makeSelection: Sink[Option[T]], placeholderText: Option[String], isDisabled: Observable[Boolean]): VNode = {
     val enteredText = createStringHandler()
     // val selectedIndex = createHandler[Int](0)
 
@@ -148,6 +148,7 @@ object Views {
         value <-- selectedAsText,
         change.filter(_.target.value.isEmpty)(None) --> makeSelection,
         autocomplete := "off",
+        disabled <-- isDisabled,
         placeholder := placeholderText.getOrElse("")),
       ul(
         keydown.filter(_.keyCode == 38)("down") --> keyHandler,

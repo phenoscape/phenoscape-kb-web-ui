@@ -1,6 +1,7 @@
 package org.phenoscape.kb.ui
 
 import org.phenoscape.kb.ui.App.KBRouter.FacetURLP
+import org.phenoscape.kb.ui.FacetPage.PhenotypicQuality
 import org.phenoscape.kb.ui.Model.{HomologyAnnotation, IRI, Relation, Term}
 import org.phenoscape.kb.ui.Vocab._
 import outwatch.dom.VDomModifier.StringNode
@@ -45,10 +46,10 @@ object EntityPage extends Component {
           List(dt(property.label, ":"), dd(relationsList: _*))
       }.toSeq
     }
-    val taxaLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxaTab, List(e), Nil, Nil, None, false, false, false)))
-    val taxonAnnotationsLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxonAnnotationsTab, List(e), Nil, Nil, None, false, false, false)))
-    val phenotypesLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.PhenotypesTab, List(e), Nil, Nil, None, false, false, false)))
-    val pubsLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.PublicationsTab, List(e), Nil, Nil, None, false, false, false)))
+    val taxaLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxaTab, List(e), Nil, Nil, None, PhenotypicQuality, false, false, false)))
+    val taxonAnnotationsLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.TaxonAnnotationsTab, List(e), Nil, Nil, None, PhenotypicQuality, false, false, false)))
+    val phenotypesLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.PhenotypesTab, List(e), Nil, Nil, None, PhenotypicQuality, false, false, false)))
+    val pubsLink = entityIRIObs.map(e => FacetURLP.urlForState(FacetPage.State(FacetPage.PublicationsTab, List(e), Nil, Nil, None, PhenotypicQuality, false, false, false)))
 
     def termLink(term: Term) = a(href := s"#/entity/${Vocab.compact(term.iri).id}", term.label)
 

@@ -42,6 +42,8 @@ object FacetPage extends Component {
 
   final case class SetIncludeSerialHomologs(include: Boolean) extends Action
 
+  final case class SetQualityMode(mode: QualityMode) extends Action
+
   sealed trait FacetTab
 
   final case object PhenotypesTab extends FacetTab
@@ -56,6 +58,22 @@ object FacetPage extends Component {
 
   final case object PublicationsTab extends FacetTab
 
+  sealed trait QualityMode
+
+  final case object PhenotypicQuality extends QualityMode
+
+  final case object InferredPresence extends QualityMode {
+
+    val iri = IRI("http://purl.org/phenoscape/vocab.owl#inferred_presence")
+
+  }
+
+  final case object InferredAbsence extends QualityMode {
+
+    val iri = IRI("http://purl.org/phenoscape/vocab.owl#inferred_absence")
+
+  }
+
   final case class QuerySpec(entity: Option[IRI], quality: Option[IRI], taxon: Option[IRI], publication: Option[IRI], includeParts: Boolean, includeHistoricalHomologs: Boolean, includeSerialHomologs: Boolean)
 
   final case class State(
@@ -64,6 +82,7 @@ object FacetPage extends Component {
                           selectedQualityPath: List[IRI],
                           selectedTaxonPath: List[IRI],
                           selectedPublication: Option[IRI],
+                          qualityMode: QualityMode,
                           includeParts: Boolean,
                           includeHistoricalHomologs: Boolean,
                           includeSerialHomologs: Boolean,
@@ -77,15 +96,16 @@ object FacetPage extends Component {
     def evolve: Action => State = {
       case SelectTab(tab)                        => copy(selectedTab = tab)
       case SetEntityPath(entityList)             => copy(selectedEntityPath = entityList, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
-      case SetQualityPath(qualityList)           => copy(selectedQualityPath = qualityList, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
+      case SetQualityPath(qualityList)           => copy(qualityMode = PhenotypicQuality, selectedQualityPath = qualityList, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case SetTaxonPath(taxonList)               => copy(selectedTaxonPath = taxonList, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case SetPublication(pubOpt)                => copy(selectedPublication = pubOpt, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, publicationsPage = 1)
       case AddEntityToPath(entity)               => copy(selectedEntityPath = entity :: selectedEntityPath, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
-      case AddQualityToPath(quality)             => copy(selectedQualityPath = quality :: selectedQualityPath, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
+      case AddQualityToPath(quality)             => copy(qualityMode = PhenotypicQuality, selectedQualityPath = quality :: selectedQualityPath, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case AddTaxonToPath(taxon)                 => copy(selectedTaxonPath = taxon :: selectedTaxonPath, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case SetIncludeParts(include)              => copy(includeParts = include, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case SetIncludeHistoricalHomologs(include) => copy(includeHistoricalHomologs = include, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case SetIncludeSerialHomologs(include)     => copy(includeSerialHomologs = include, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
+      case SetQualityMode(mode)                  => copy(qualityMode = mode, taxaPage = 1, phenotypesPage = 1, taxonAnnotationsPage = 1, genesPage = 1, geneAnnotationsPage = 1, publicationsPage = 1)
       case SetPage(tab, page)                    => tab match {
         case PhenotypesTab       => copy(phenotypesPage = page)
         case TaxaTab             => copy(taxaPage = page)
@@ -96,7 +116,14 @@ object FacetPage extends Component {
       }
     }
 
-    def currentQuerySpec: QuerySpec = QuerySpec(selectedEntityPath.headOption, selectedQualityPath.headOption, selectedTaxonPath.headOption, selectedPublication, includeParts, includeHistoricalHomologs, includeSerialHomologs)
+    def currentQuerySpec: QuerySpec = {
+      val quality = qualityMode match {
+        case PhenotypicQuality => selectedQualityPath.headOption
+        case InferredPresence  => Some(InferredPresence.iri)
+        case InferredAbsence   => Some(InferredAbsence.iri)
+      }
+      QuerySpec(selectedEntityPath.headOption, quality, selectedTaxonPath.headOption, selectedPublication, includeParts, includeHistoricalHomologs, includeSerialHomologs)
+    }
 
   }
 
@@ -114,7 +141,12 @@ object FacetPage extends Component {
     val qualityPath = store.map(_.selectedQualityPath).distinctUntilChanged
     val quality = querySpecObs.map(_.quality).distinctUntilChanged
     val entityTerm = entity.flatMap(e => Util.sequence(e.map(KBAPI.termLabel)))
-    val qualityTerm = quality.flatMap(q => Util.sequence(q.map(KBAPI.termLabel)))
+    val qualityTerm = quality.flatMap {
+      case Some(InferredPresence.iri) => Observable.of(Some(Term(InferredPresence.iri, "Inferred Presence")))
+      case Some(InferredAbsence.iri)  => Observable.of(Some(Term(InferredAbsence.iri, "Inferred Absence")))
+      case q                          => Util.sequence(q.map(KBAPI.termLabel))
+    }
+    val qualityMode = store.map(_.qualityMode).distinctUntilChanged
     val taxonPath = store.map(_.selectedTaxonPath).distinctUntilChanged
     val taxon = querySpecObs.map(_.taxon).distinctUntilChanged
     val taxonTerm = taxon.flatMap(t => Util.sequence(t.map(KBAPI.termLabel)))
@@ -177,7 +209,8 @@ object FacetPage extends Component {
           case TaxaTab             => KBAPI.countTaxaWithPhenotype(_: Option[IRI], q, t, p, parts, hist, serial)
           case GenesTab            => KBAPI.countGenesWithPhenotype(_: Option[IRI], q, parts, hist, serial)
           case TaxonAnnotationsTab => KBAPI.countTaxonAnnotations(_: Option[IRI], q, t, p, parts, hist, serial)
-          case PublicationsTab     => KBAPI.countStudiesWithPhenotype(_: Option[IRI], q, t, p, parts, hist, serial)
+          //          case GeneAnnotationsTab  => KBAPI.countGeneAnnotations()
+          case PublicationsTab => KBAPI.countStudiesWithPhenotype(_: Option[IRI], q, t, p, parts, hist, serial)
         }
     }
     val entityFacetFn = querySpecObs.map(spec => (spec.quality, spec.taxon, spec.publication, spec.includeParts, spec.includeHistoricalHomologs, spec.includeSerialHomologs)).distinctUntilChanged.combineLatestWith(activeTab) {
@@ -234,10 +267,10 @@ object FacetPage extends Component {
     val setQualityPath: Sink[List[IRI]] = store.sink.redirectMap(SetQualityPath)
     val setTaxonPath: Sink[List[IRI]] = store.sink.redirectMap(SetTaxonPath)
     val setPublicationOpt: Sink[Option[IRI]] = store.sink.redirectMap(SetPublication)
-    val entitySearch = Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.Uberon)), 20), entityTerm, (term: Term) => term.label, setEntityPath.redirectMap((ot: Option[Term]) => ot.map(_.iri).toList), Some("any anatomical entity"))
-    val qualitySearch = Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.PATO)), 20), qualityTerm, (term: Term) => term.label, setQualityPath.redirectMap((ot: Option[Term]) => ot.map(_.iri).toList), Some("any phenotypic quality"))
-    val taxonSearch = Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.VTO)), 20), taxonTerm, (term: Term) => term.label, setTaxonPath.redirectMap((ot: Option[Term]) => ot.map(_.iri).toList), Some("any taxonomic group"))
-    val pubSearch = Views.autocompleteField(KBAPI.studySearch, publicationTerm, (term: Term) => term.label, setPublicationOpt.redirectMap((ot: Option[Term]) => ot.map(_.iri)), Some("any publication"))
+    val entitySearch = Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.Uberon)), 20), entityTerm, (term: Term) => term.label, setEntityPath.redirectMap((ot: Option[Term]) => ot.map(_.iri).toList), Some("any anatomical entity"), Observable.of(false))
+    val qualitySearch = Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.PATO)), 20), qualityTerm, (term: Term) => term.label, setQualityPath.redirectMap((ot: Option[Term]) => ot.map(_.iri).toList), Some("any phenotypic quality"), qualityMode.map(_ != PhenotypicQuality))
+    val taxonSearch = Views.autocompleteField(KBAPI.ontologyClassSearch(_: String, Some(IRI(Vocab.VTO)), 20), taxonTerm, (term: Term) => term.label, setTaxonPath.redirectMap((ot: Option[Term]) => ot.map(_.iri).toList), Some("any taxonomic group"), Observable.of(false))
+    val pubSearch = Views.autocompleteField(KBAPI.studySearch, publicationTerm, (term: Term) => term.label, setPublicationOpt.redirectMap((ot: Option[Term]) => ot.map(_.iri)), Some("any publication"), Observable.of(false))
 
     div(
       cls := "row",
@@ -255,7 +288,7 @@ object FacetPage extends Component {
             qualitySearch,
             taxonSearch,
             pubSearch)),
-        facetControls("anatomical entity", entityPath, entityCountFn, entityFacetFn, setEntityPath, Observable.of(false))(Some(div(
+        facetControls("anatomical entity", entityPath, entityCountFn, entityFacetFn, setEntityPath, Observable.of(false), Observable.of(false))(Some(div(
           cls := "form-inline",
           div(
             div(cls := "form-group", label("Include: ")),
@@ -271,8 +304,26 @@ object FacetPage extends Component {
               tpe := "checkbox",
               checked <-- store.map(_.includeSerialHomologs),
               inputChecked --> store.sink.redirectMap(SetIncludeSerialHomologs)), " serial homologs ")))))),
-        facetControls("phenotypic quality", qualityPath, qualityCountFn, qualityFacetFn, setQualityPath, Observable.of(false))(None),
-        facetControls("taxonomic group", taxonPath, taxonCountFn, taxonFacetFn, setTaxonPath, activeTab.map(t => Set[FacetTab](GenesTab, GeneAnnotationsTab)(t)))(None)),
+        facetControls("phenotypic quality", qualityPath, qualityCountFn, qualityFacetFn, setQualityPath, Observable.of(false), qualityMode.map(_ != PhenotypicQuality))(Some(div(
+          cls := "form-inline",
+          div(
+            div(cls := "form-group", label("Mode: ")),
+            div(cls := "radio", label(input(
+              tpe := "radio",
+              name := "phenotypic-quality-radio",
+              checked <-- qualityMode.map(_ == PhenotypicQuality),
+              inputChecked --> store.sink.redirectMap(_ => SetQualityMode(PhenotypicQuality))), " quality ")),
+            div(cls := "radio", label(input(
+              tpe := "radio",
+              name := "phenotypic-quality-radio",
+              checked <-- qualityMode.map(_ == InferredPresence),
+              inputChecked --> store.sink.redirectMap(_ => SetQualityMode(InferredPresence))), " inferred presence ")),
+            div(cls := "radio", label(input(
+              tpe := "radio",
+              name := "phenotypic-quality-radio",
+              checked <-- qualityMode.map(_ == InferredAbsence),
+              inputChecked --> store.sink.redirectMap(_ => SetQualityMode(InferredAbsence))), " inferred absence ")))))),
+        facetControls("taxonomic group", taxonPath, taxonCountFn, taxonFacetFn, setTaxonPath, activeTab.map(t => Set[FacetTab](GenesTab, GeneAnnotationsTab)(t)), Observable.of(false))(None)),
       div(
         cls := "col-sm-8",
         ul(
@@ -428,7 +479,7 @@ object FacetPage extends Component {
     tr(td(Popover.popup(Views.publicationInfoView(term.iri), "auto", "focus")(term.label)))
   }
 
-  private def facetControls(title: String, focusItemPath: Observable[List[IRI]], countFunc: Observable[CountFn], facetFunc: Observable[FacetFn], newFocus: Sink[List[IRI]], disabledObs: Observable[Boolean])(accessoryView: Option[VNode]): VNode = {
+  private def facetControls(title: String, focusItemPath: Observable[List[IRI]], countFunc: Observable[CountFn], facetFunc: Observable[FacetFn], newFocus: Sink[List[IRI]], disabledObs: Observable[Boolean], facetsHiddenObs: Observable[Boolean])(accessoryView: Option[VNode]): VNode = {
     val facetPathPaths = focusItemPath.map { list =>
       list.reverse.scanLeft(List.empty[IRI])((path, term) => term :: path).drop(1)
     }
@@ -461,10 +512,12 @@ object FacetPage extends Component {
         hidden <-- disabledObs,
         cls := "panel-body",
         div(cls := "facet-accessory", accessoryView.getOrElse(div())),
-        div(cls := "facet-line", a(role := "button", cls <-- anyCSSClass, click(Nil) --> newFocus, s"Any $title"), " ", span(cls := "badge", child <-- anyCount)),
-        div(children <-- facetPathElements),
-        div(children <-- facetChildElements),
-        div(hidden <-- childrenLoaded, Views.loading)))
+        div(
+          hidden <-- facetsHiddenObs,
+          div(cls := "facet-line", a(role := "button", cls <-- anyCSSClass, click(Nil) --> newFocus, s"Any $title"), " ", span(cls := "badge", child <-- anyCount)),
+          div(children <-- facetPathElements),
+          div(children <-- facetChildElements),
+          div(hidden <-- childrenLoaded, Views.loading))))
   }
 
   private def facetPathLink(termPath: List[IRI], countFunc: Observable[CountFn], newFocus: Sink[List[IRI]], selected: Boolean): VNode = {

@@ -1,16 +1,15 @@
 package org.phenoscape.kb.ui
 
+import cats.data.Validated.Invalid
+import org.phenoscape.kb.ui.FacetPage.PhenotypicQuality
+import org.phenoscape.kb.ui.Model.{Curie, IRI}
+import org.phenoscape.kb.ui.QueryParams._
+import outwatch.dom._
+import outwatch.router.{BaseUrl, Router}
+import rxscalajs.Observable
+
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.URIUtils.decodeURIComponent
-
-import Model.Curie
-import Model.IRI
-import QueryParams._
-import cats.data.Validated.Invalid
-import outwatch.dom._
-import outwatch.router.BaseUrl
-import outwatch.router.Router
-import rxscalajs.Observable
 
 object App extends JSApp {
 
@@ -21,23 +20,36 @@ object App extends JSApp {
   object KBRouter extends Router {
 
     sealed trait Page
+
     object HomePage extends Page
+
     object AboutKBPage extends Page
+
     case class TaxonURL(id: String) extends Page
+
     case class EntityURL(id: String) extends Page
+
     case class GeneURL(id: String) extends Page
+
     case class GeneSimilarityURL(id: String) extends Page
+
     object FacetURL extends Page
+
+    //FIXME add state for inferred presence/absence
     case class FacetURLP(params: String) extends Page with ParameterizedURL {
 
       def tab: FacetPage.FacetTab = param("tab").collect(FacetURLP.keyToTab).getOrElse(FacetPage.TaxaTab)
 
       def entity: Option[IRI] = param("entity").map(e => Vocab.expand(Curie(e)))
+
       def quality: Option[IRI] = param("quality").map(e => Vocab.expand(Curie(e)))
+
       def taxon: Option[IRI] = param("taxon").map(e => Vocab.expand(Curie(e)))
+
       def pub: Option[IRI] = param("pub").map(e => Vocab.expand(Curie(e)))
 
     }
+
     object FacetURLP {
 
       val tabToKey: Map[FacetPage.FacetTab, String] = Map(
@@ -59,6 +71,7 @@ object App extends JSApp {
       }
 
     }
+
     object OntotraceURL extends Page
 
     val baseUrl: BaseUrl = BaseUrl.until_# + "#"
@@ -75,8 +88,8 @@ object App extends JSApp {
         ("/entity" / string(".+")).caseClass[EntityURL] ~> { case EntityURL(id) => EntityPage(EntityPage.State(Vocab.expand(Curie(id)))) },
         ("/gene" / string(".+")).caseClass[GeneURL] ~> { case GeneURL(id) => GenePage(GenePage.State(Vocab.expand(Curie(id)))) },
         ("/similarity/gene" / string(".+")).caseClass[GeneSimilarityURL] ~> { case GeneSimilarityURL(id) => GeneTaxonSimilarityPage(GeneTaxonSimilarityPage.State(Vocab.expand(Curie(id)), None)) },
-        ("/facet?" ~ remainingPathOrBlank).caseClass[FacetURLP] ~> (params => FacetPage(FacetPage.State(params.tab, params.entity.toList, params.quality.toList, params.taxon.toList, params.pub, false, false, false))),
-        "/facet".const(FacetURL) ~> FacetPage(FacetPage.State(FacetPage.TaxaTab, Nil, Nil, Nil, None, false, false, false)),
+        ("/facet?" ~ remainingPathOrBlank).caseClass[FacetURLP] ~> (params => FacetPage(FacetPage.State(params.tab, params.entity.toList, params.quality.toList, params.taxon.toList, params.pub, PhenotypicQuality, false, false, false))),
+        "/facet".const(FacetURL) ~> FacetPage(FacetPage.State(FacetPage.TaxaTab, Nil, Nil, Nil, None, PhenotypicQuality, false, false, false)),
         "/ontotrace".const(OntotraceURL) ~> OntoTracePage(OntoTracePage.State(OntoTracePage.SimpleMode, None, None, false, false, Invalid(None), Invalid(None))))
         .notFound(Redirect(HomePage, replace = true))
     }
