@@ -6,7 +6,7 @@ lazy val commonSettings = Seq(
   organization := "org.phenoscape",
   version := "0.2",
   licenses := Seq("MIT license" -> url("https://opensource.org/licenses/MIT")),
-  scalaVersion := "2.13.5",
+  scalaVersion := "2.13.8",
   scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Ypatmat-exhaust-depth", "off")
 )
 
