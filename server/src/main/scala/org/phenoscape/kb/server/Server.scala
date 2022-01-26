@@ -6,7 +6,7 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import zio._
 import zio.blocking.{Blocking, blockingExecutor}
 import zio.interop.catz._
