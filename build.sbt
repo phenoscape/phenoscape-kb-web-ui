@@ -1,14 +1,14 @@
-val zioVersion = "1.0.13"
-val zioCatsVersion = "3.2.9.0"
-val http4sVersion = "0.23.10"
-val circeVersion = "0.14.1"
-val sttpClientVersion = "3.4.1"
+val zioVersion = "1.0.18"
+val zioCatsVersion = "3.2.9.1"
+val http4sVersion = "0.23.15"
+val circeVersion = "0.14.5"
+val sttpClientVersion = "3.4.2"
 
 lazy val commonSettings = Seq(
   organization := "org.phenoscape",
-  version := "0.2.3",
+  version := "0.2.5",
   licenses := Seq("MIT license" -> url("https://opensource.org/licenses/MIT")),
-  scalaVersion := "2.13.7",
+  scalaVersion := "2.13.11",
   scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Ypatmat-exhaust-depth", "off")
 )
 
@@ -30,7 +30,7 @@ lazy val webUI = project.in(file("ui"))
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= {
       Seq(
-        "com.raquo" %%% "laminar" % "0.14.2",
+        "com.raquo" %%% "laminar" % "0.14.5",
         "com.raquo" %%% "waypoint" % "0.5.0",
         "com.lihaoyi" %%% "upickle" % "1.5.0",
         "io.circe" %%% "circe-core" % circeVersion,
@@ -38,7 +38,7 @@ lazy val webUI = project.in(file("ui"))
         "io.circe" %%% "circe-parser" % circeVersion,
         "com.softwaremill.sttp.client3" %%% "core" % sttpClientVersion,
         "com.softwaremill.sttp.client3" %%% "circe" % sttpClientVersion,
-        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1"
       )
     }
   )
@@ -55,7 +55,7 @@ lazy val webServer = project.in(file("server"))
         "dev.zio" %% "zio-interop-cats" % zioCatsVersion,
         "org.http4s" %% "http4s-blaze-server" % http4sVersion,
         "org.http4s" %% "http4s-dsl" % http4sVersion,
-        "com.outr" %% "scribe-slf4j" % "3.7.0"
+        "com.outr" %% "scribe-slf4j" % "3.7.1"
       )
     }
   )
@@ -63,7 +63,8 @@ lazy val webServer = project.in(file("server"))
 lazy val dockerSettings = Seq(
   Docker / packageName := "phenoscape-kb-web-ui",
   dockerUsername := Some("phenoscape"),
-  dockerExposedPorts := Seq(8080)
+  dockerExposedPorts := Seq(8080),
+  dockerBuildxPlatforms := Seq("linux/arm64/v8", "linux/amd64")
 )
 
 val jsPath = "server/src/main/resources/js"
